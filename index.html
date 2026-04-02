@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a3a5c">
+  <meta name="description" content="Sean's personal picks of local mom-and-pop shops in Alamance County — with exclusive deals.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Alamance Picks">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <title>Alamance Picks — Sean's Local Picks</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1a3a5c;
+      --orange: #ff8844;
+      --pink: #ff3366;
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --border: #e5e7eb;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── PWA Install Banner ── */
+    #install-banner {
+      position: fixed;
+      bottom: 60px;
+      left: 12px;
+      right: 12px;
+      background: var(--navy);
+      color: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 14px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      z-index: 9999;
+      animation: slideUp 0.4s ease;
+    }
+    #install-banner.show { display: flex; }
+    #install-banner .install-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--orange);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    #install-banner .install-text { flex: 1; }
+    #install-banner .install-title { font-weight: 700; font-size: 15px; }
+    #install-banner .install-sub { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 1px; }
+    #install-banner .install-btn {
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #install-banner .close-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.5);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ── App Shell ─────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--bg);
+    }
+
+    /* ── Header ────────────────────────────── */
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 14px 18px 12px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    header .app-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header .tagline {
+      font-size: 12px;
+      opacity: 0.65;
+      margin-top: 2px;
+    }
+    header .campaign-badge {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: var(--orange);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── Category Tabs ─────────────────────── */
+    .cat-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px 10px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+
+    .cat-tab {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .cat-tab.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+
+    /* ── View Container ─────────────────────── */
+    .view { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .view.active { display: flex; flex-direction: column; }
+
+    /* ── Business List ─────────────────────── */
+    .biz-list { padding: 4px 16px 100px; }
+
+    .biz-card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      animation: fadeUp 0.3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .biz-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .biz-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .seans-pick-badge {
+      flex-shrink: 0;
+      background: var(--pink);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .biz-cat {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .biz-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 10px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .biz-address {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .biz-address a {
+      color: var(--navy);
+      text-decoration: none;
+    }
+
+    /* ── Deal Box ───────────────────────────── */
+    .deal-box {
+      background: #f8f9ff;
+      border: 1.5px dashed var(--orange);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .deal-desc {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .deal-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .deal-code {
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+    }
+    .deal-expires {
+      font-size: 11px;
+      font-weight: 600;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .deal-expires.green { color: var(--green); }
+    .deal-expires.amber { color: var(--amber); }
+    .deal-expires.red { color: var(--pink); animation: pulse 1s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ── Expired Deal ──────────────────────── */
+    .deal-box.expired {
+      border-color: var(--border);
+      background: #f9f9f9;
+      opacity: 0.6;
+    }
+    .deal-box.expired .deal-desc { color: var(--muted); }
+    .deal-box.expired .deal-code { color: var(--muted); }
+
+    /* ── CTA Buttons ───────────────────────── */
+    .biz-ctas {
+      display: flex;
+      gap: 8px;
+    }
+    .cta-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 9px 8px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: opacity 0.2s;
+      min-height: 42px;
+    }
+    .cta-btn:active { opacity: 0.8; }
+    .cta-dir {
+      background: var(--navy);
+      color: #fff;
+    }
+    .cta-call {
+      background: var(--orange);
+      color: #fff;
+    }
+
+    /* ── Empty State ───────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 30px;
+      color: var(--muted);
+    }
+    .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; line-height: 1.5; }
+
+    /* ── Map View ───────────────────────────── */
+    #map-view { padding: 0; }
+    #map-view iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      min-height: 400px;
+    }
+    .map-banner {
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── About View ────────────────────────── */
+    #about-view { padding: 20px 18px 100px; }
+    .about-card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 22px 18px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .about-card img {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 14px;
+      border: 3px solid var(--orange);
+    }
+    .about-card h2 {
+      font-size: 20px;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .about-card .title {
+      font-size: 13px;
+      color: var(--orange);
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .about-card p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .about-card .contact-btn {
+      display: inline-block;
+      background: var(--orange);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .about-section h3 {
+      font-size: 16px;
+      color: var(--navy);
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+    .about-section p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    /* ── Bottom Nav ────────────────────────── */
+    .bottom-nav {
+      display: flex;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 10px 6px 12px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      transition: color 0.2s;
+      border: none;
+      background: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-item.active { color: var(--navy); }
+    .nav-item .icon { font-size: 22px; line-height: 1; }
+    .nav-item::after { content: ''; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="app-name">🏛️ Alamance Picks</div>
+    <div class="tagline">Sean's Local Business Picks</div>
+    <div class="campaign-badge">Ewing 2026</div>
+  </header>
+
+  <!-- Category Tabs -->
+  <div class="cat-tabs" id="cat-tabs"></div>
+
+  <!-- ── Directory View ── -->
+  <div class="view active" id="dir-view">
+    <div class="biz-list" id="biz-list"></div>
+  </div>
+
+  <!-- ── Map View ── -->
+  <div class="view" id="map-view">
+    <div class="map-banner">📍 Map view — all <span id="map-count">0</span> businesses</div>
+    <iframe id="map-frame" allowfullscreen loading="lazy"></iframe>
+  </div>
+
+  <!-- ── About View ── -->
+  <div class="view" id="about-view">
+    <div class="about-card">
+      <img src="https://i.imgur.com/placeholder-sean.png" alt="Sean Ewing" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 90 90%22><rect fill=%22%231a3a5c%22 width=%2290%22 height=%2290%22 rx=%2245%22/><text x=%2245%22 y=%2258%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2234%22>SE</text></svg>'">
+      <h2>Sean Ewing</h2>
+      <div class="title">Democrat · Alamance County Commissioner 2026</div>
+      <p>Two-term Mebane City Councilman, USAF Veteran, and Electrical Engineer. Sean is visiting every mom-and-pop shop in Alamance County to highlight the local businesses that make our community special — and to bring you exclusive deals just for being an Alamance resident.</p>
+      <a href="mailto:EwingDesignTech@Gmail.com?subject=Alamance%20Picks%20Submission" class="contact-btn">📩 Submit a Business</a>
+    </div>
+
+    <div class="about-section">
+      <h3>About Alamance Picks</h3>
+      <p>Alamance Picks is a free directory of locally-owned businesses in Alamance County that Sean has personally visited and endorsed. Each business gets a time-limited discount code — a way for Sean to give back to the community and drive foot traffic to the shops that make our county special.</p>
+      <p>This app is non-partisan and focused purely on supporting local business. No reviews, no negativity — just community.</p>
+    </div>
+
+    <div class="about-section">
+      <h3>For Business Owners</h3>
+      <p>Want to be featured? Reach out! Sean is actively visiting businesses across Burlington, Mebane, Graham, Gibsonville, and Elon. There's no cost — just a genuine endorsement and a short discount code to help bring in new customers.</p>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="dir-view">
+      <span class="icon">📍</span>
+      Directory
+    </button>
+    <button class="nav-item" data-view="map-view">
+      <span class="icon">🗺️</span>
+      Map
+    </button>
+    <button class="nav-item" data-view="about-view">
+      <span class="icon">ℹ️</span>
+      About
+    </button>
+  </nav>
+
+</div>
+
+<!-- PWA Install Banner -->
+<div id="install-banner">
+  <div class="install-icon">📱</div>
+  <div class="install-text">
+    <div class="install-title">Add to Home Screen</div>
+    <div class="install-sub">Alamance Picks works best as an app</div>
+  </div>
+  <button class="install-btn" onclick="installApp()">Add</button>
+  <button class="close-btn" onclick="closeBanner()">✕</button>
+</div>
+
+<script>
+// ─── Sample Data ────────────────────────────────────────────────────────────
+const BUSINESSES = [
+  // ── MEBANE ────────────────────────────────────────────────────────────────
+  {
+    id: "m1",
+    name: "2 Twelve Seasonal Kitchen",
+    category: "restaurant",
+    pick: true,
+    description: "Contemporary American cuisine in a cozy, upscale atmosphere. Known for pimento cheese hushpuppies and shellfish and grits.",
+    address: "100 E. Center St, Mebane, NC 27302",
+    phone: "336-436-0099",
+    lat: 36.0935, lng: -79.2652,
+    website: "https://2twelvemebane.com",
+    deal: { description: "15% off your first visit", code: "EWING15", expiresAt: "2026-04-20T23:59:59" }
+  },
+  {
+    id: "m2",
+    name: "Filament Coffee + Tea",
+    category: "restaurant",
+    pick: true,
+    description: "Beloved gathering spot on Clay Street. Fair trade teas, locally sourced coffee, organic pastries from local bakers, plus a curated gift shop.",
+    address: "114 W. Clay St, Mebane, NC 27302",
+    phone: "336-436-4000",
+    lat: 36.0928, lng: -79.2670,
+    website: "https://filamentcoffeenc.com",
+    deal: { description: "Free pastry with any large drink", code: "LOCALPASTRY", expiresAt: "2026-04-15T23:59:59" }
+  },
+  {
+    id: "m3",
+    name: "Bright Penny Brewing",
+    category: "restaurant",
+    pick: true,
+    description: "Local brewery with craft beers including the popular hazy IPA Fog Watch. Wood-fired pizzas and bar snacks in a relaxed taproom.",
+    address: "200 S. Center St, Mebane, NC 27302",
+    phone: "336-436-0099",
+    lat: 36.0920, lng: -79.2645,
+    website: "",
+    deal: { description: "$2 off your first flight", code: "PENNY2", expiresAt: "2026-04-18T23:59:59" }
+  },
+  {
+    id: "m4",
+    name: "Junction on 70",
+    category: "restaurant",
+    pick: false,
+    description: "Burgers, fries, wings, and pizza in a casual setting. A reliable local favorite near I-85/40.",
+    address: "3715 S. NC-87, Mebane, NC 27302",
+    phone: "336-578-2700",
+    lat: 36.0750, lng: -79.2550,
+    website: "",
+    deal: { description: "Free fries with any burger combo", code: "JUNCTIONFRIES", expiresAt: "2026-04-10T23:59:59" }
+  },
+  {
+    id: "m5",
+    name: "The Habit Coffee Company",
+    category: "restaurant",
+    pick: true,
+    description: "Woman-owned coffee shop that roasts in-house. Spacious dining room with fast WiFi, just off I-85/40.",
+    address: "3713 S. NC-87, Mebane, NC 27302",
+    phone: "336-578-1000",
+    lat: 36.0748, lng: -79.2552,
+    website: "https://habitcoffeeco.com",
+    deal: { description: "10% off any coffee drink", code: "HABIT10", expiresAt: "2026-04-12T23:59:59" }
+  },
+  {
+    id: "m6",
+    name: "Go Girl Shoppe",
+    category: "retail",
+    pick: true,
+    description: "Boutique that started in a camper — now ladies' clothing, jewelry, home decor, and gifts. A Mebane gem.",
+    address: "114 W. Clay St, Mebane, NC 27302",
+    phone: "336-436-8700",
+    lat: 36.0928, lng: -79.2672,
+    website: "",
+    deal: { description: "10% off any purchase", code: "GOGIRL10", expiresAt: "2026-04-22T23:59:59" }
+  },
+  {
+    id: "m7",
+    name: "Sweet Grace Market",
+    category: "retail",
+    pick: false,
+    description: "Multi-vendor boutique marketplace featuring unique home decor, gifts, and goods from local vendors.",
+    address: "106 W. Clay St, Mebane, NC 27302",
+    phone: "336-436-9900",
+    lat: 36.0930, lng: -79.2675,
+    website: "https://sweetgracemarket.com",
+    deal: { description: "Free gift wrap on orders over $25", code: "SWEETGIFT", expiresAt: "2026-04-14T23:59:59" }
+  },
+  {
+    id: "m8",
+    name: "Palato Gourmet",
+    category: "retail",
+    pick: false,
+    description: "Gourmet olive oils, vinegar, and meal mixes. A foodie's paradise in downtown Mebane.",
+    address: "108 W. Clay St, Mebane, NC 27302",
+    phone: "336-436-5500",
+    lat: 36.0930, lng: -79.2678,
+    website: "",
+    deal: { description: "15% off any olive oil set", code: "PALATO15", expiresAt: "2026-04-16T23:59:59" }
+  },
+
+  // ── GRAHAM ────────────────────────────────────────────────────────────────
+  {
+    id: "g1",
+    name: "The Verdict on the Square",
+    category: "restaurant",
+    pick: true,
+    description: "American comfort food with a modern twist. Craft beers, bourbon, whiskey, cocktails. A must-visit on Graham's courthouse square.",
+    address: "200 S. Main St, Graham, NC 27253",
+    phone: "336-226-8000",
+    lat: 36.0728, lng: -79.4004,
+    website: "https://theverdictonthesquare.com",
+    deal: { description: "Free appetizer with any entree", code: "VERDICTFREE", expiresAt: "2026-04-18T23:59:59" }
+  },
+  {
+    id: "g2",
+    name: "Press Coffee + Crepe",
+    category: "restaurant",
+    pick: true,
+    description: "European-style crepes — sweet and savory — plus excellent coffee and a brunch menu with beer, wine, and spirits.",
+    address: "110 S. Main St, Graham, NC 27253",
+    phone: "336-226-0500",
+    lat: 36.0730, lng: -79.4000,
+    website: "",
+    deal: { description: "Free coffee with any breakfast crepe", code: "PRESSCOFFEE", expiresAt: "2026-04-11T23:59:59" }
+  },
+  {
+    id: "g3",
+    name: "Graham Soda Shop & Grill",
+    category: "restaurant",
+    pick: true,
+    description: "Classic downtown throwback. Southern comfort food, handcrafted burgers, hot dogs, handspun milkshakes. A Graham institution.",
+    address: "100 S. Main St, Graham, NC 27253",
+    phone: "336-226-7500",
+    lat: 36.0732, lng: -79.3998,
+    website: "https://grahamsodashop.com",
+    deal: { description: "$2 off any burger combo", code: "SODASHOP2", expiresAt: "2026-04-09T23:59:59" }
+  },
+  {
+    id: "g4",
+    name: "Smokehouse at Steve's",
+    category: "restaurant",
+    pick: true,
+    description: "Wood-fired smoked brisket, pork, chicken, and traditional Southern sides. Scratch kitchen done right.",
+    address: "230 S. Main St, Graham, NC 27253",
+    phone: "336-226-4500",
+    lat: 36.0720, lng: -79.4010,
+    website: "",
+    deal: { description: "Free side with any BBQ platter", code: "SMOKEFRESIDE", expiresAt: "2026-04-20T23:59:59" }
+  },
+  {
+    id: "g5",
+    name: "Roasted Coffee Depot",
+    category: "restaurant",
+    pick: false,
+    description: "Café and gift shop serving lattes, cold brew, local art, bagels, and cinnamon rolls. A creative hub on Main Street.",
+    address: "115 S. Main St, Graham, NC 27253",
+    phone: "336-226-9000",
+    lat: 36.0728, lng: -79.4002,
+    website: "",
+    deal: { description: "10% off any coffee order", code: "DEPOT10", expiresAt: "2026-04-13T23:59:59" }
+  },
+  {
+    id: "g6",
+    name: "The Main Line",
+    category: "retail",
+    pick: true,
+    description: "Artisan marketplace and gift shop with handmade products from 100+ local artisans. Jewelry, pottery, painted furniture, pet treats.",
+    address: "114 S. Main St, Graham, NC 27253",
+    phone: "336-226-3300",
+    lat: 36.0728, lng: -79.4006,
+    website: "https://themainlinenc.com",
+    deal: { description: "Free gift with any purchase over $30", code: "MAINLINE30", expiresAt: "2026-04-17T23:59:59" }
+  },
+  {
+    id: "g7",
+    name: "Steve's Garden Market & Butchery",
+    category: "retail",
+    pick: false,
+    description: "Neighborhood market with fruits, vegetables, meats, gourmet items, and prepared meals. Local and fresh.",
+    address: "230 S. Main St, Graham, NC 27253",
+    phone: "336-226-4600",
+    lat: 36.0720, lng: -79.4012,
+    website: "",
+    deal: { description: "10% off any prepared meal", code: "STEVS10", expiresAt: "2026-04-14T23:59:59" }
+  },
+  {
+    id: "g8",
+    name: "HiFi Records",
+    category: "arts",
+    pick: true,
+    description: "Vinyl records, craft beer, and wine in a relaxed atmosphere. A music lover's destination in downtown Graham.",
+    address: "118 S. Main St, Graham, NC 27253",
+    phone: "336-226-4400",
+    lat: 36.0728, lng: -79.4008,
+    website: "",
+    deal: { description: "Buy 2 records, get 1 free", code: "HIFI3FOR2", expiresAt: "2026-04-25T23:59:59" }
+  },
+  {
+    id: "g9",
+    name: "Forgotten Road Ales",
+    category: "restaurant",
+    pick: false,
+    description: "Craft brewery specializing in barrel-aged, wild, sour, and hazy IPAs. A hidden gem for craft beer fans.",
+    address: "220 S. Main St, Graham, NC 27253",
+    phone: "336-226-7800",
+    lat: 36.0722, lng: -79.4015,
+    website: "",
+    deal: { description: "$3 off any flight", code: "FORGOTTEN3", expiresAt: "2026-04-11T23:59:59" }
+  },
+  {
+    id: "g10",
+    name: "Heart + Sole Wellness Co.",
+    category: "wellness",
+    pick: true,
+    description: "Luxury spa in Graham. Various massage styles, facials, body wraps — a full-service relaxation destination.",
+    address: "115 S. Main St, Graham, NC 27253",
+    phone: "336-226-0000",
+    lat: 36.0728, lng: -79.4002,
+    website: "https://heartandsolenc.com",
+    deal: { description: "20% off first spa visit", code: "SOLE20", expiresAt: "2026-04-30T23:59:59" }
+  },
+
+  // ── BURLINGTON ─────────────────────────────────────────────────────────────
+  {
+    id: "b1",
+    name: "Blue Ribbon Diner",
+    category: "restaurant",
+    pick: true,
+    description: "Alamance County staple voted Best Diner 3+ years running. Family-friendly, blue-plate specials, hand-dipped milkshakes.",
+    address: "2903 S. Church St, Burlington, NC 27215",
+    phone: "336-227-0100",
+    lat: 36.0750, lng: -79.4650,
+    website: "https://blueribbondiner.net",
+    deal: { description: "10% off any order", code: "BLUERIBBON10", expiresAt: "2026-04-12T23:59:59" }
+  },
+  {
+    id: "b2",
+    name: "It's All Good",
+    category: "restaurant",
+    pick: true,
+    description: "Southern kitchen with made-from-scratch cooking. The kind of food that makes you feel at home.",
+    address: "2593 Ramadge Rd, Burlington, NC 27217",
+    phone: "336-227-4400",
+    lat: 36.0755, lng: -79.4550,
+    website: "",
+    deal: { description: "Free tea with any breakfast", code: "ALLGOODTEA", expiresAt: "2026-04-10T23:59:59" }
+  },
+  {
+    id: "b3",
+    name: "The Cutting Board",
+    category: "restaurant",
+    pick: false,
+    description: "Alamance County tradition — family restaurant with a wide range of options. Consistently good, always welcoming.",
+    address: "2945 S. Church St, Burlington, NC 27215",
+    phone: "336-227-8400",
+    lat: 36.0748, lng: -79.4652,
+    website: "",
+    deal: { description: "Kids eat free on Tuesdays", code: "KIDSFREE", expiresAt: "2026-04-30T23:59:59" }
+  },
+  {
+    id: "b4",
+    name: "Zack's Hot Dogs",
+    category: "restaurant",
+    pick: true,
+    description: "Institution since 1928. Classic American diner food in Burlington's historic district. Simple, honest, beloved.",
+    address: "1235 Rauhut St, Burlington, NC 27217",
+    phone: "336-227-5420",
+    lat: 36.0900, lng: -79.4360,
+    website: "",
+    deal: { description: "$1 off any combo meal", code: "ZACKS1", expiresAt: "2026-04-08T23:59:59" }
+  },
+  {
+    id: "b5",
+    name: "Valerio's Italian Restaurant",
+    category: "restaurant",
+    pick: false,
+    description: "Family-owned Italian with homemade pasta, sauces, and a warm atmosphere. A Burlington classic.",
+    address: "2633 S. Church St, Burlington, NC 27215",
+    phone: "336-227-5400",
+    lat: 36.0770, lng: -79.4655,
+    website: "",
+    deal: { description: "Free garlic knots with any pasta", code: "VALERIOS", expiresAt: "2026-04-15T23:59:59" }
+  },
+
+  // ── GIBSONVILLE ───────────────────────────────────────────────────────────
+  {
+    id: "gv1",
+    name: "Jack's Barbecue",
+    category: "restaurant",
+    pick: true,
+    description: "Homemade BBQ, burgers, hot dogs, daily specials, and pie. A Gibsonville institution on West Main Street.",
+    address: "213 W. Main St, Gibsonville, NC 27249",
+    phone: "336-449-6100",
+    lat: 36.1162, lng: -79.5439,
+    website: "",
+    deal: { description: "Free drink with any BBQ plate", code: "JACKSBBQ", expiresAt: "2026-04-11T23:59:59" }
+  },
+  {
+    id: "gv2",
+    name: "La Casa Dorada",
+    category: "restaurant",
+    pick: false,
+    description: "Custom Mexican cuisine with a full-service bar. A reliable local spot for tacos, margaritas, and more.",
+    address: "128 W. Main St, Gibsonville, NC 27249",
+    phone: "336-449-8800",
+    lat: 36.1165, lng: -79.5435,
+    website: "",
+    deal: { description: "20% off any dine-in order", code: "CASADORA20", expiresAt: "2026-04-13T23:59:59" }
+  },
+  {
+    id: "gv3",
+    name: "The Hive Coffee Shop",
+    category: "restaurant",
+    pick: true,
+    description: "Local coffee shop on Gibsonville's Main Street. Great spot to work, meet, or just grab a good cup.",
+    address: "111 E. Main St, Gibsonville, NC 27249",
+    phone: "336-449-9900",
+    lat: 36.1168, lng: -79.5430,
+    website: "",
+    deal: { description: "$1 off any specialty drink", code: "HIVE1", expiresAt: "2026-04-09T23:59:59" }
+  },
+  {
+    id: "gv4",
+    name: "Maple View's County Line Creamery",
+    category: "restaurant",
+    pick: true,
+    description: "Homemade ice cream from Hillsborough's Maple View Farm. A sweet stop in downtown Gibsonville.",
+    address: "113 E. Main St, Gibsonville, NC 27249",
+    phone: "336-449-7200",
+    lat: 36.1168, lng: -79.5430,
+    website: "",
+    deal: { description: "Free topping on any cone", code: "MAPLETOP", expiresAt: "2026-04-14T23:59:59" }
+  },
+  {
+    id: "gv5",
+    name: "Toasty Kettlyst Beer Company",
+    category: "restaurant",
+    pick: false,
+    description: "Nano brewery with small-batch craft beers. Committed to revitalizing historic downtown Gibsonville.",
+    address: "106 W. Main St, Gibsonville, NC 27249",
+    phone: "336-449-3300",
+    lat: 36.1165, lng: -79.5437,
+    website: "https://toastykettlyst.com",
+    deal: { description: "2-for-1 flights on Fridays", code: "TOASTY2FOR1", expiresAt: "2026-04-17T23:59:59" }
+  },
+
+  // ── ELON ──────────────────────────────────────────────────────────────────
+  {
+    id: "e1",
+    name: "The Root",
+    category: "restaurant",
+    pick: true,
+    description: "Lively spot near Elon University. Known for the Basil Bleu Cheese Burger, mac and cheese, and crispy Brussels sprouts.",
+    address: "100 N. Williamson Ave, Elon, NC 27244",
+    phone: "336-278-9000",
+    lat: 36.0970, lng: -79.7020,
+    website: "",
+    deal: { description: "Free fries with any burger", code: "THEROOTS", expiresAt: "2026-04-10T23:59:59" }
+  },
+  {
+    id: "e2",
+    name: "Simply Thai",
+    category: "restaurant",
+    pick: true,
+    description: "Traditional Thai cuisine within walking distance of campus. Pad thai, pad pet, Thai salads, lettuce wraps, and sushi.",
+    address: "204 N. Williamson Ave, Elon, NC 27244",
+    phone: "336-278-0800",
+    lat: 36.0978, lng: -79.7015,
+    website: "",
+    deal: { description: "15% off takeout orders", code: "SIMPLYTHAI15", expiresAt: "2026-04-16T23:59:59" }
+  },
+  {
+    id: "e3",
+    name: "The Fat Frogg Bar & Grill",
+    category: "restaurant",
+    pick: false,
+    description: "Great food and weekend entertainment including Trivia Tuesdays. Burgers, grilled chicken salad, and a solid beer selection.",
+    address: "203 N. Williamson Ave, Elon, NC 27244",
+    phone: "336-278-9400",
+    lat: 36.0975, lng: -79.7018,
+    website: "https://thefatfrogg.com",
+    deal: { description: "$5 off any order over $25", code: "FROGG5", expiresAt: "2026-04-12T23:59:59" }
+  },
+  {
+    id: "e4",
+    name: "All That Jas",
+    category: "retail",
+    pick: false,
+    description: "Greek apparel company in downtown Elon since 2005. Also offers unique gifts and lifestyle items.",
+    address: "201 N. Williamson Ave, Elon, NC 27244",
+    phone: "336-278-5500",
+    lat: 36.0973, lng: -79.7020,
+    website: "",
+    deal: { description: "10% off any apparel purchase", code: "ALLTHAT10", expiresAt: "2026-04-15T23:59:59" }
+  },
+
+  // ── SAXAPAHAW ─────────────────────────────────────────────────────────────
+  {
+    id: "s1",
+    name: "The Eddy Pub",
+    category: "restaurant",
+    pick: true,
+    description: "Gourmet pub fare made with local, farm-fresh ingredients. Deck patio overlooking the Haw River.",
+    address: "1737 Saxapahaw Rd, Saxapahaw, NC 27340",
+    phone: "336-525-2000",
+    lat: 35.9050, lng: -79.6200,
+    website: "",
+    deal: { description: "Free soup or salad with any entree", code: "EDDYFREESOUP", expiresAt: "2026-04-20T23:59:59" }
+  },
+
+  // ── WELLNESS ───────────────────────────────────────────────────────────────
+  {
+    id: "w1",
+    name: "Nature's Cottage Organic Wellness Spa",
+    category: "wellness",
+    pick: true,
+    description: "Woman-owned, locally rooted spa offering organic treatments, clean skincare, and natural wellness products.",
+    address: "Burlington, NC 27215",
+    phone: "336-000-0000",
+    lat: 36.0750, lng: -79.4550,
+    website: "https://naturescottagenc.com",
+    deal: { description: "15% off any spa package", code: "COTTAGE15", expiresAt: "2026-04-25T23:59:59" }
+  },
+  {
+    id: "w2",
+    name: "Exhale Studio",
+    category: "wellness",
+    pick: false,
+    description: "Barre, Pilates, and yoga classes. Full-body workouts designed to increase strength and improve alignment.",
+    address: "2955 S. Church St, Burlington, NC 27215",
+    phone: "336-227-3000",
+    lat: 36.0745, lng: -79.4655,
+    website: "https://exhale-studio.com",
+    deal: { description: "Free intro class for new clients", code: "EXHLEFREECLASS", expiresAt: "2026-04-30T23:59:59" }
+  },
+  {
+    id: "w3",
+    name: "Studio 8 Wellness Center",
+    category: "wellness",
+    pick: false,
+    description: "Fitness and wellness center for women. TRX, yoga, core training, and midlife health education.",
+    address: "Graham, NC 27253",
+    phone: "336-226-0800",
+    lat: 36.0730, lng: -79.4000,
+    website: "https://www.studio8wellnesscenter.com",
+    deal: { description: "1 week free membership trial", code: "STUDIO8FREE", expiresAt: "2026-04-30T23:59:59" }
+  },
+
+  // ── KEEPING ORIGINAL PRIORITY PICKS ──────────────────────────────────────
+  {
+    id: "o1",
+    name: "Mebane Antique Mall",
+    category: "retail",
+    pick: true,
+    description: "Three floors of antiques, vintage finds, and unique gifts. An Alamance County treasure since 1989.",
+    address: "200 W. Center St, Mebane, NC 27302",
+    phone: "336-227-2100",
+    lat: 36.0932, lng: -79.2667,
+    website: "",
+    deal: { description: "10% off any purchase", code: "EWING10", expiresAt: "2026-04-05T23:59:59" }
+  },
+  {
+    id: "o2",
+    name: "Red Moon Cafe",
+    category: "restaurant",
+    pick: true,
+    description: "Farm-to-table breakfast and lunch in the heart of Mebane. Known for biscuits, local coffee, and daily specials.",
+    address: "102 E. Center St, Mebane, NC 27302",
+    phone: "336-436-9898",
+    lat: 36.0935, lng: -79.2655,
+    website: "",
+    deal: { description: "Free coffee with any breakfast", code: "EWINGFRIES", expiresAt: "2026-04-03T23:59:59" }
+  },
+  {
+    id: "o3",
+    name: "Elon Books & Art",
+    category: "arts",
+    pick: true,
+    description: "Independent bookstore specializing in Southern literature, local authors, and handmade NC art.",
+    address: "120 W. Haggard Ave, Elon, NC 27244",
+    phone: "336-278-5001",
+    lat: 36.1009, lng: -79.7037,
+    website: "",
+    deal: { description: "15% off any book purchase", code: "READLOCAL", expiresAt: "2026-04-08T23:59:59" }
+  },
+  {
+    id: "o4",
+    name: "Jade Wellness Center",
+    category: "wellness",
+    pick: true,
+    description: "Acupuncture, massage therapy, and holistic health in a calm, welcoming space. Served Mebane for 12 years.",
+    address: "405 S. Fifth St, Mebane, NC 27302",
+    phone: "336-548-9900",
+    lat: 36.0890, lng: -79.2630,
+    website: "",
+    deal: { description: "20% off first-time visit", code: "EWINGWELL", expiresAt: "2026-04-10T23:59:59" }
+  },
+  {
+    id: "o5",
+    name: "Carolina Cookie Company",
+    category: "restaurant",
+    pick: true,
+    description: "Gourmet cookies baked fresh daily. Gift boxes available. A Burlington favorite for 20 years.",
+    address: "299 S. Main St, Burlington, NC 27215",
+    phone: "336-227-2700",
+    lat: 36.0950, lng: -79.4355,
+    website: "",
+    deal: { description: "Free cookie with any dozen order", code: "FREECOOKIE", expiresAt: "2026-04-04T23:59:59" }
+  }
+];
+
+const CATEGORIES = [
+  { id: "all", label: "All" },
+  { id: "restaurant", label: "Food & Drink" },
+  { id: "retail", label: "Retail & Shops" },
+  { id: "service", label: "Services" },
+  { id: "wellness", label: "Wellness" },
+  { id: "arts", label: "Arts & Culture" },
+];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let activeCategory = "all";
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+function init() {
+  renderTabs();
+  renderList();
+  buildMap();
+  setupNav();
+  setInterval(updateCountdowns, 60000); // update every minute
+}
+
+function renderTabs() {
+  const container = document.getElementById("cat-tabs");
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "cat-tab" + (cat.id === activeCategory ? " active" : "");
+    btn.textContent = cat.label;
+    btn.dataset.cat = cat.id;
+    btn.addEventListener("click", () => {
+      activeCategory = cat.id;
+      document.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+      renderList();
+    });
+    container.appendChild(btn);
+  });
+}
+
+function getExpirationText(expiresAt) {
+  const now = new Date();
+  const exp = new Date(expiresAt);
+  const diffMs = exp - now;
+  if (diffMs <= 0) return { text: "Expired", class: "red" };
+  const diffHrs = diffMs / (1000 * 60 * 60);
+  if (diffHrs < 4) return { text: `⚠️ ${Math.ceil(diffHrs)}h left`, class: "red" };
+  if (diffHrs < 24) return { text: `${Math.ceil(diffHrs)}h left`, class: "amber" };
+  const diffDays = Math.floor(diffHrs / 24);
+  return { text: `${diffDays}d left`, class: "green" };
+}
+
+function isExpired(expiresAt) {
+  return new Date(expiresAt) <= new Date();
+}
+
+function renderList() {
+  const container = document.getElementById("biz-list");
+  container.innerHTML = "";
+
+  const filtered = activeCategory === "all"
+    ? BUSINESSES
+    : BUSINESSES.filter(b => b.category === activeCategory);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">🏪</div>
+        <p>No picks in this category yet.<br>Check back soon!</p>
+      </div>`;
+    return;
+  }
+
+  filtered.forEach((biz, i) => {
+    const exp = getExpirationText(biz.deal.expiresAt);
+    const expired = isExpired(biz.deal.expiresAt);
+    const cat = CATEGORIES.find(c => c.id === biz.category);
+
+    const card = document.createElement("div");
+    card.className = "biz-card";
+    card.style.animationDelay = `${i * 0.05}s`;
+
+    card.innerHTML = `
+      <div class="biz-top">
+        <div class="biz-name">${biz.name}</div>
+        ${biz.pick ? '<div class="seans-pick-badge">Sean's Pick</div>' : ''}
+      </div>
+      <div class="biz-cat">${cat ? cat.label : biz.category}</div>
+      <div class="biz-desc">${biz.description}</div>
+      <div class="biz-address">📍 <a href="https://maps.apple.com/?q=${encodeURIComponent(biz.address)}" target="_blank">${biz.address}</a></div>
+      <div class="deal-box${expired ? ' expired' : ''}">
+        <div class="deal-desc">🛍️ ${biz.deal.description}</div>
+        <div class="deal-row">
+          <div class="deal-code">${biz.deal.code}</div>
+          <div class="deal-expires ${exp.class}">${exp.text}</div>
+        </div>
+      </div>
+      <div class="biz-ctas">
+        <a class="cta-btn cta-dir" href="https://maps.apple.com/?daddr=${encodeURIComponent(biz.address)}" target="_blank">🗺️ Directions</a>
+        <a class="cta-btn cta-call" href="tel:${biz.phone.replace(/\D/g,'')}">📞 ${biz.phone}</a>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  document.getElementById("map-count").textContent = BUSINESSES.length;
+}
+
+function updateCountdowns() {
+  // Only re-render if on directory view
+  if (document.getElementById("dir-view").classList.contains("active")) {
+    // For simplicity, just re-render the list to update countdowns
+    // A production version would update only the countdown elements
+    renderList();
+  }
+}
+
+function buildMap() {
+  // Build a static Google Maps embed with markers
+  const center = "Alamance+County+NC";
+  const markers = BUSINESSES.map(b =>
+    `(${b.lat},${b.lng},"${b.name.replace(/"/g, '')}")`
+  ).join("&");
+  // Use a simple Google Maps embed URL with all businesses as markers
+  const embedUrl = `https://www.google.com/maps?q=${center}&z=11&output=embed`;
+  document.getElementById("map-frame").src = embedUrl;
+}
+
+function setupNav() {
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const viewId = btn.dataset.view;
+
+      // Update nav active state
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      btn.classList.add("active");
+
+      // Switch view
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.getElementById(viewId).classList.add("active");
+    });
+  });
+}
+
+init();
+
+// ── PWA Install Prompt ────────────────────────────────────────────────────
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install banner after a short delay (don't intrude on first load)
+  setTimeout(() => {
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.classList.add('show');
+  }, 3000);
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+  });
+}
+
+function closeBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('SW registered');
+  }).catch(err => console.log('SW registration failed:', err));
+}
+</script>
+</body>
+</html>
