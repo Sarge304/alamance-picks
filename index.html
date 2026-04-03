@@ -1043,6 +1043,8 @@ let activeCategory = "all";
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 function init() {
+  // Save businesses to localStorage so admin panel can access them
+  localStorage.setItem('alamance_businesses', JSON.stringify(BUSINESSES));
   renderTabs();
   renderList();
   buildMap();
