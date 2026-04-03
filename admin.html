@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a3a5c">
+  <title>Alamance Picks — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1a3a5c;
+      --orange: #ff8844;
+      --pink: #ff3366;
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --border: #e5e7eb;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+    /* ── Login Screen ── */
+    #login-screen {
+      position: fixed; inset: 0; background: var(--navy);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #login-screen h1 { color: #fff; font-size: 28px; margin-bottom: 8px; }
+    #login-screen p { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; }
+    #pin-display {
+      display: flex; gap: 12px; margin-bottom: 24px;
+    }
+    .pin-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.4);
+      background: transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .pin-dot.filled { background: var(--orange); border-color: var(--orange); }
+    #pin-keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+    .key-btn {
+      height: 64px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.1); color: #fff;
+      font-size: 24px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .key-btn:active { background: rgba(255,255,255,0.25); }
+    .key-btn.clear { font-size: 16px; }
+    #login-error { color: #ff6b6b; font-size: 13px; margin-top: 12px; min-height: 20px; text-align: center; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-8px); }
+      40%,80% { transform: translateX(8px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* ── App Shell (after login) ── */
+    #app { display: none; flex-direction: column; height: 100%; }
+
+    /* ── Admin Header ── */
+    .admin-header {
+      background: var(--navy); color: #fff; padding: 14px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .admin-header h1 { font-size: 18px; font-weight: 700; }
+    .admin-header .header-right { display: flex; align-items: center; gap: 12px; }
+    .admin-header .visit-count {
+      background: var(--orange); color: #fff;
+      font-size: 12px; font-weight: 700; padding: 3px 8px;
+      border-radius: 12px;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,0.15); border: none; color: #fff;
+      font-size: 13px; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+    }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1; padding: 12px 8px; border: none; background: none;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      cursor: pointer; border-bottom: 3px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+    /* ── Tab Content ── */
+    .tab-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
+
+    /* ── Filter Pills ── */
+    .filter-row {
+      padding: 12px 16px; display: flex; gap: 8px; overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-pill {
+      padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--card); font-size: 12px; font-weight: 600;
+      color: var(--muted); white-space: nowrap; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-pill.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    /* ── Business List ── */
+    .biz-admin-card {
+      background: var(--card); margin: 0 16px 10px; border-radius: 12px;
+      padding: 14px; box-shadow: var(--shadow);
+      cursor: pointer; transition: box-shadow 0.15s;
+    }
+    .biz-admin-card:active { box-shadow: none; }
+    .biz-admin-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .biz-admin-name { font-size: 15px; font-weight: 700; flex: 1; }
+    .status-badge {
+      font-size: 10px; font-weight: 700; padding: 3px 8px;
+      border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .status-badge.contacted { background: #f3f4f6; color: #9ca3af; }
+    .status-badge.visited { background: #fef3c7; color: #d97706; }
+    .status-badge.agreed { background: #dbeafe; color: #2563eb; }
+    .status-badge.live { background: #dcfce7; color: #16a34a; }
+    .biz-admin-meta { font-size: 12px; color: var(--muted); }
+    .biz-admin-meta span { margin-right: 10px; }
+    .biz-admin-photos { display: flex; gap: 6px; margin-top: 8px; }
+    .biz-admin-photos img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1.5px solid var(--border); }
+    .biz-admin-photos .photo-placeholder { width: 44px; height: 44px; border-radius: 8px; background: var(--bg); border: 1.5px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); }
+
+    /* ── Tab Panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Visit Form ── */
+    #visit-form { padding: 16px; }
+    #visit-form h2 { font-size: 17px; margin-bottom: 4px; }
+    #visit-form .biz-subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+
+    .form-section { margin-bottom: 24px; }
+    .form-section h3 { font-size: 13px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+
+    /* Photo capture */
+    #camera-preview {
+      width: 100%; max-width: 320px; border-radius: 12px;
+      background: #000; display: block; margin: 0 auto 10px;
+    }
+    #camera-canvas { display: none; }
+    .photo-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .photo-thumb {
+      width: 70px; height: 70px; border-radius: 10px; object-fit: cover;
+      border: 2px solid var(--border); cursor: pointer; position: relative;
+    }
+    .photo-thumb .remove-photo {
+      position: absolute; top: -6px; right: -6px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--red); color: #fff; border: none;
+      font-size: 12px; line-height: 20px; text-align: center;
+      cursor: pointer;
+    }
+    .photo-add-btn {
+      width: 70px; height: 70px; border-radius: 10px;
+      border: 2px dashed var(--border); background: var(--bg);
+      font-size: 28px; color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .photo-add-btn:active { background: #e5e7eb; }
+    #no-camera-msg { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+
+    /* Signature pad */
+    #sig-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; display: block; }
+    #sig-pad-wrap { position: relative; border: 2px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; }
+    #sig-pad {
+      display: block; width: 100%; height: 160px;
+      touch-action: none; cursor: crosshair;
+    }
+    #sig-placeholder {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #d1d5db; font-size: 14px; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    #sig-placeholder.hidden { opacity: 0; }
+    #sig-clear {
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(0,0,0,0.05); border: none; border-radius: 6px;
+      padding: 4px 10px; font-size: 11px; color: var(--muted); cursor: pointer;
+    }
+
+    /* Text inputs */
+    .form-input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 15px; font-family: inherit;
+      background: var(--card); color: var(--text);
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--navy); }
+    .form-input::placeholder { color: #9ca3af; }
+    textarea.form-input { resize: vertical; min-height: 80px; }
+
+    /* Status selector */
+    .status-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-opt {
+      padding: 8px 14px; border-radius: 10px; border: 2px solid var(--border);
+      background: var(--card); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .status-opt:active { transform: scale(0.97); }
+    .status-opt.selected { border-color: var(--navy); background: var(--navy); color: #fff; }
+    .status-opt.visited.selected { border-color: var(--amber); background: var(--amber); }
+    .status-opt.agreed.selected { border-color: #2563eb; background: #2563eb; }
+    .status-opt.live.selected { border-color: var(--green); background: var(--green); }
+
+    /* Submit button */
+    .save-btn {
+      width: 100%; padding: 15px; background: var(--navy); color: #fff;
+      border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      cursor: pointer; margin-top: 8px;
+      transition: background 0.2s;
+    }
+    .save-btn:active { background: #152d4a; }
+    .save-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    /* Business selector */
+    .biz-selector {
+      width: 100%; padding: 12px 14px; border: 2px solid var(--border);
+      border-radius: 12px; font-size: 15px; background: var(--card);
+      color: var(--text); cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+    }
+    .biz-selector:focus { outline: none; border-color: var(--navy); }
+
+    /* History tab */
+    #history-list { padding: 12px 16px; }
+    .history-entry {
+      background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .history-biz { font-size: 15px; font-weight: 700; }
+    .history-date { font-size: 12px; color: var(--muted); }
+    .history-owner { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .history-status { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
+    .history-photos { display: flex; gap: 6px; margin-top: 8px; }
+    .history-photos img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+    .history-notes { font-size: 13px; color: var(--text); margin-top: 6px; font-style: italic; }
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+    .empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; line-height: 1.5; }
+
+    /* Export button */
+    .export-btn {
+      display: block; width: calc(100% - 32px); margin: 0 16px 16px;
+      padding: 12px; background: var(--card); color: var(--navy);
+      border: 2px solid var(--navy); border-radius: 12px;
+      font-size: 14px; font-weight: 700; cursor: pointer; text-align: center;
+      text-decoration: none;
+    }
+    .export-btn:active { background: var(--bg); }
+
+    /* Toast notification */
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--navy); color: #fff; padding: 12px 20px;
+      border-radius: 10px; font-size: 14px; font-weight: 600;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; z-index: 9999;
+    }
+    #toast.show { opacity: 1; }
+
+    /* Photo lightbox */
+    #lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+      z-index: 99999; display: none; align-items: center; justify-content: center;
+    }
+    #lightbox.show { display: flex; }
+    #lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
+    #lightbox-close {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255,255,255,0.2); border: none; color: #fff;
+      width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="login-screen">
+  <h1>Alamance Picks</h1>
+  <p>Admin Panel</p>
+  <div id="pin-display">
+    <div class="pin-dot" id="dot0"></div>
+    <div class="pin-dot" id="dot1"></div>
+    <div class="pin-dot" id="dot2"></div>
+    <div class="pin-dot" id="dot3"></div>
+  </div>
+  <div id="pin-keypad">
+    <button class="key-btn" data-key="1">1</button>
+    <button class="key-btn" data-key="2">2</button>
+    <button class="key-btn" data-key="3">3</button>
+    <button class="key-btn" data-key="4">4</button>
+    <button class="key-btn" data-key="5">5</button>
+    <button class="key-btn" data-key="6">6</button>
+    <button class="key-btn" data-key="7">7</button>
+    <button class="key-btn" data-key="8">8</button>
+    <button class="key-btn" data-key="9">9</button>
+    <button class="key-btn clear" data-key="clear">⌫</button>
+    <button class="key-btn" data-key="0">0</button>
+    <button class="key-btn" data-key="submit">→</button>
+  </div>
+  <div id="login-error"></div>
+</div>
+
+<!-- ── Admin App ── -->
+<div id="app">
+  <div class="admin-header">
+    <h1>🏪 Alamance Picks Admin</h1>
+    <div class="header-right">
+      <span class="visit-count" id="visit-badge">0 visits</span>
+      <button class="logout-btn" id="logout-btn">Logout</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="dir-tab">Directory</button>
+    <button class="tab-btn" data-tab="visit-tab">Visit</button>
+    <button class="tab-btn" data-tab="history-tab">History</button>
+  </div>
+
+  <div class="tab-content">
+
+    <!-- ── Directory Tab ── -->
+    <div class="tab-panel active" id="dir-tab">
+      <div class="filter-row" id="status-filter">
+        <button class="filter-pill active" data-filter="all">All</button>
+        <button class="filter-pill" data-filter="contacted">Contacted</button>
+        <button class="filter-pill" data-filter="visited">Visited</button>
+        <button class="filter-pill" data-filter="agreed">Agreed</button>
+        <button class="filter-pill" data-filter="live">Live</button>
+      </div>
+      <div id="biz-admin-list"></div>
+    </div>
+
+    <!-- ── Visit Tab ── -->
+    <div class="tab-panel" id="visit-tab">
+      <div id="visit-form">
+        <h2>New Visit</h2>
+        <p class="biz-subtitle">Select a business to log a visit</p>
+
+        <div class="form-section">
+          <h3>1. Select Business</h3>
+          <select class="biz-selector" id="visit-biz-select">
+            <option value="">— Choose a business —</option>
+          </select>
+        </div>
+
+        <div id="visit-fields" style="display:none">
+          <div class="form-section">
+            <h3>2. Photos <span style="font-weight:400;color:var(--muted)">(up to 4)</span></h3>
+            <video id="camera-preview" autoplay playsinline muted></video>
+            <canvas id="camera-canvas"></canvas>
+            <div id="no-camera-msg" style="display:none">Camera not available. You can still log a visit without photos.</div>
+            <div class="photo-strip" id="photo-strip">
+              <button class="photo-add-btn" id="add-photo-btn">📷</button>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>3. Owner Signature</h3>
+            <span id="sig-label">Owner or manager signs below</span>
+            <div id="sig-pad-wrap">
+              <canvas id="sig-pad"></canvas>
+              <div id="sig-placeholder">✍️ Draw your signature</div>
+              <button id="sig-clear">Clear</button>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>4. Owner Name</h3>
+            <input class="form-input" id="owner-name-input" type="text" placeholder="Who signed? (e.g. Jane Smith, Manager)">
+          </div>
+
+          <div class="form-section">
+            <h3>5. Notes</h3>
+            <textarea class="form-input" id="visit-notes" placeholder="How did the visit go? Any details to remember?"></textarea>
+          </div>
+
+          <div class="form-section">
+            <h3>6. Status After Visit</h3>
+            <div class="status-selector" id="visit-status-select">
+              <button class="status-opt" data-status="contacted">Contacted</button>
+              <button class="status-opt visited" data-status="visited">Visited</button>
+              <button class="status-opt agreed" data-status="agreed">Agreed</button>
+              <button class="status-opt live" data-status="live">Live ✓</button>
+            </div>
+          </div>
+
+          <button class="save-btn" id="save-visit-btn">Save Visit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── History Tab ── -->
+    <div class="tab-panel" id="history-tab">
+      <a class="export-btn" id="export-btn">📤 Export All Data as JSON</a>
+      <div id="history-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="lightbox">
+  <button id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="">
+</div>
+
+<script>
+// ─── PIN Authentication ───────────────────────────────────────────────────
+const STORED_PIN_KEY = 'alamance_admin_pin';
+const STORED_DATA_KEY = 'alamance_admin_data';
+const ENTERED_PIN = [null, null, null, null];
+let pinStep = 0;
+
+function renderPinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.classList.toggle('filled', ENTERED_PIN[i] !== null);
+  }
+}
+
+function handlePinKey(key) {
+  const errorEl = document.getElementById('login-error');
+  errorEl.textContent = '';
+
+  if (key === 'clear') {
+    if (pinStep > 0) {
+      pinStep--;
+      ENTERED_PIN[pinStep] = null;
+      renderPinDots();
+    }
+    return;
+  }
+
+  if (key === 'submit') {
+    const entered = ENTERED_PIN.join('');
+    const storedPin = localStorage.getItem(STORED_PIN_KEY);
+
+    if (!storedPin) {
+      // First time setup — set the PIN
+      localStorage.setItem(STORED_PIN_KEY, entered);
+      showApp();
+      return;
+    }
+
+    if (entered === storedPin) {
+      showApp();
+    } else {
+      // Wrong PIN — shake
+      const display = document.getElementById('pin-display');
+      display.classList.remove('shake');
+      void display.offsetWidth;
+      display.classList.add('shake');
+      errorEl.textContent = 'Wrong PIN. Try again.';
+      ENTERED_PIN.fill(null);
+      pinStep = 0;
+      renderPinDots();
+    }
+    return;
+  }
+
+  if (pinStep < 4) {
+    ENTERED_PIN[pinStep] = key;
+    pinStep++;
+    renderPinDots();
+  }
+}
+
+document.querySelectorAll('.key-btn').forEach(btn => {
+  btn.addEventListener('click', () => handlePinKey(btn.dataset.key));
+});
+
+// ─── App State ─────────────────────────────────────────────────────────────
+let allBusinesses = [];
+let adminData = { visits: [] }; // { visits: [{id, bizId, date, status, photos, signature, ownerName, notes}] }
+let currentPhotos = [];
+let currentSignature = '';
+let currentVisitBizId = '';
+let stream = null;
+let isDrawing = false;
+let lastX = 0, lastY = 0;
+let lastTime = 0;
+let lastPressure = 0.5;
+
+function loadAdminData() {
+  try {
+    const stored = localStorage.getItem(STORED_DATA_KEY);
+    if (stored) adminData = JSON.parse(stored);
+  } catch(e) { adminData = { visits: [] }; }
+  updateVisitBadge();
+}
+
+function saveAdminData() {
+  localStorage.setItem(STORED_DATA_KEY, JSON.stringify(adminData));
+  updateVisitBadge();
+}
+
+function updateVisitBadge() {
+  document.getElementById('visit-badge').textContent = adminData.visits.length + ' visits';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadAdminData();
+  loadBusinesses();
+  renderHistory();
+}
+
+// ─── Tab Navigation ─────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Load Businesses from index.html's BUSINESSES array ──────────────────────
+function loadBusinesses() {
+  // Read from localStorage where index.html stores it
+  // Since we're a separate page, we load from admin data
+  // We need the base business list — load from localStorage backup
+  const storedBiz = localStorage.getItem('alamance_businesses');
+  if (storedBiz) {
+    allBusinesses = JSON.parse(storedBiz);
+  } else {
+    // Fallback — use inline minimal list
+    allBusinesses = getDefaultBusinesses();
+  }
+
+  // Merge visit data into businesses
+  allBusinesses.forEach(biz => {
+    biz.visits = adminData.visits.filter(v => v.bizId === biz.id);
+    biz.latestVisit = biz.visits.length > 0 ? biz.visits[biz.visits.length - 1] : null;
+    biz.displayStatus = biz.latestVisit ? biz.latestVisit.status : (biz.status || 'contacted');
+  });
+
+  populateBizSelector();
+  renderBizList('all');
+}
+
+// Inline default businesses (backup)
+function getDefaultBusinesses() {
+  return [
+    { id: 'm1', name: '2 Twelve Seasonal Kitchen', category: 'restaurant', status: 'contacted' },
+    { id: 'm2', name: 'Filament Coffee + Tea', category: 'restaurant', status: 'contacted' },
+    { id: 'm3', name: 'Bright Penny Brewing', category: 'restaurant', status: 'contacted' },
+    { id: 'm4', name: 'Junction on 70', category: 'restaurant', status: 'contacted' },
+  ];
+}
+
+// ─── Business List Rendering ────────────────────────────────────────────────
+let activeFilter = 'all';
+
+function renderBizList(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.filter === filter));
+
+  const filtered = filter === 'all'
+    ? allBusinesses
+    : allBusinesses.filter(b => b.displayStatus === filter);
+
+  const list = document.getElementById('biz-admin-list');
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">🏪</div>
+        <p>No businesses with this status.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(biz => `
+    <div class="biz-admin-card" onclick="openBizDetail('${biz.id}')">
+      <div class="biz-admin-top">
+        <div class="biz-admin-name">${biz.name}</div>
+        <span class="status-badge ${biz.displayStatus}">${biz.displayStatus}</span>
+      </div>
+      <div class="biz-admin-meta">
+        <span>📍 ${biz.address || 'No address'}</span>
+      </div>
+      ${biz.latestVisit && biz.latestVisit.photos && biz.latestVisit.photos.length > 0 ? `
+        <div class="biz-admin-photos">
+          ${biz.latestVisit.photos.slice(0,4).map(p => `<img src="${p}" alt="Visit photo">`).join('')}
+          ${biz.latestVisit.photos.length < 4 ? '<div class="photo-placeholder">📷</div>' : ''}
+        </div>` : ''}
+    </div>
+  `).join('');
+}
+
+// Filter pills
+document.getElementById('status-filter').addEventListener('click', e => {
+  if (e.target.classList.contains('filter-pill')) {
+    renderBizList(e.target.dataset.filter);
+  }
+});
+
+// ─── Business Detail (inline modal) ──────────────────────────────────────────
+function openBizDetail(bizId) {
+  const biz = allBusinesses.find(b => b.id === bizId);
+  if (!biz) return;
+
+  // Pre-fill visit form with this business
+  document.getElementById('visit-biz-select').value = bizId;
+  document.getElementById('visit-fields').style.display = 'block';
+  currentVisitBizId = bizId;
+
+  // Pre-fill if there's a latest visit
+  if (biz.latestVisit) {
+    document.getElementById('owner-name-input').value = biz.latestVisit.ownerName || '';
+    document.getElementById('visit-notes').value = biz.latestVisit.notes || '';
+    preselectStatus(biz.latestVisit.status);
+  } else {
+    document.getElementById('owner-name-input').value = '';
+    document.getElementById('visit-notes').value = '';
+    preselectStatus('visited');
+  }
+
+  // Switch to visit tab
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-tab="visit-tab"]').classList.add('active');
+  document.getElementById('visit-tab').classList.add('active');
+}
+
+function preselectStatus(status) {
+  document.querySelectorAll('.status-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.status === status);
+  });
+}
+
+// ─── Biz Selector ────────────────────────────────────────────────────────────
+function populateBizSelector() {
+  const sel = document.getElementById('visit-biz-select');
+  const businesses = [...allBusinesses].sort((a, b) => a.name.localeCompare(b.name));
+  sel.innerHTML = '<option value="">— Choose a business —</option>' +
+    businesses.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+}
+
+document.getElementById('visit-biz-select').addEventListener('change', e => {
+  const bizId = e.target.value;
+  currentVisitBizId = bizId;
+  document.getElementById('visit-fields').style.display = bizId ? 'block' : 'none';
+
+  if (bizId) {
+    const biz = allBusinesses.find(b => b.id === bizId);
+    if (biz && biz.latestVisit) {
+      document.getElementById('owner-name-input').value = biz.latestVisit.ownerName || '';
+      document.getElementById('visit-notes').value = biz.latestVisit.notes || '';
+      preselectStatus(biz.latestVisit.status);
+    } else if (biz) {
+      document.getElementById('owner-name-input').value = '';
+      document.getElementById('visit-notes').value = '';
+      preselectStatus(biz.status || 'contacted');
+    }
+    // Reset photos and signature for new visit
+    currentPhotos = [];
+    currentSignature = '';
+    clearSigPad();
+    renderPhotoStrip();
+  }
+});
+
+// ─── Photo Capture ───────────────────────────────────────────────────────────
+document.getElementById('add-photo-btn').addEventListener('click', async () => {
+  if (currentPhotos.length >= 4) {
+    showToast('Maximum 4 photos');
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const video = document.getElementById('camera-preview');
+    video.srcObject = stream;
+    document.getElementById('no-camera-msg').style.display = 'none';
+    video.style.display = 'block';
+
+    // One-shot: tap to capture
+    const captureHandler = () => {
+      const canvas = document.getElementById('camera-canvas');
+      const video = document.getElementById('camera-preview');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const photo = canvas.toDataURL('image/jpeg', 0.8);
+      currentPhotos.push(photo);
+      renderPhotoStrip();
+      stopCamera();
+      video.removeEventListener('click', captureHandler);
+    };
+    video.addEventListener('click', captureHandler);
+    showToast('Tap the video to take a photo');
+  } catch(e) {
+    console.error('Camera error:', e);
+    document.getElementById('no-camera-msg').style.display = 'block';
+    document.getElementById('camera-preview').style.display = 'none';
+    showToast('Camera not available');
+  }
+});
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  document.getElementById('camera-preview').style.display = 'none';
+}
+
+function renderPhotoStrip() {
+  const strip = document.getElementById('photo-strip');
+  strip.innerHTML = currentPhotos.map((p, i) => `
+    <div style="position:relative">
+      <img class="photo-thumb" src="${p}" alt="Photo ${i+1}" onclick="openLightbox('${p}')">
+      <button class="remove-photo" onclick="removePhoto(${i})">✕</button>
+    </div>
+  `).join('') + (currentPhotos.length < 4 ? '<button class="photo-add-btn" id="add-photo-btn">📷</button>' : '');
+  document.getElementById('add-photo-btn')?.addEventListener('click', document.getElementById('add-photo-btn').onclick);
+}
+
+function removePhoto(index) {
+  currentPhotos.splice(index, 1);
+  renderPhotoStrip();
+}
+
+// ─── Signature Pad ───────────────────────────────────────────────────────────
+const sigCanvas = document.getElementById('sig-pad');
+const sigCtx = sigCanvas.getContext('2d');
+const sigPlaceholder = document.getElementById('sig-placeholder');
+
+function initSigPad() {
+  const wrap = document.getElementById('sig-pad-wrap');
+  sigCanvas.width = wrap.offsetWidth;
+  sigCanvas.height = 160;
+  sigCtx.strokeStyle = '#1a1a2e';
+  sigCtx.lineWidth = 2.5;
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+}
+
+function getPos(e) {
+  const rect = sigCanvas.getBoundingClientRect();
+  const scaleX = sigCanvas.width / rect.width;
+  const scaleY = sigCanvas.height / rect.height;
+  if (e.touches && e.touches.length > 0) {
+    return {
+      x: (e.touches[0].clientX - rect.left) * scaleX,
+      y: (e.touches[0].clientY - rect.top) * scaleY,
+      pressure: e.touches[0].force || 0.5
+    };
+  }
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY,
+    pressure: 0.5
+  };
+}
+
+sigCanvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  isDrawing = true;
+  sigPlaceholder.classList.add('hidden');
+  const pos = getPos(e);
+  lastX = pos.x; lastY = pos.y; lastPressure = pos.pressure; lastTime = Date.now();
+}, { passive: false });
+
+sigCanvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!isDrawing) return;
+  const pos = getPos(e);
+  const dt = Date.now() - lastTime;
+  const dist = Math.hypot(pos.x - lastX, pos.y - lastY);
+  const velocity = dt > 0 ? dist / dt : 0;
+  const pressure = Math.min(pos.pressure * 2, 1.5);
+  sigCtx.lineWidth = 1 + pressure * 3;
+  sigCtx.beginPath();
+  sigCtx.moveTo(lastX, lastY);
+  sigCtx.lineTo(pos.x, pos.y);
+  sigCtx.stroke();
+  lastX = pos.x; lastY = pos.y; lastTime = Date.now(); lastPressure = pressure;
+}, { passive: false });
+
+sigCanvas.addEventListener('touchend', e => { e.preventDefault(); isDrawing = false; });
+sigCanvas.addEventListener('mousedown', e => {
+  isDrawing = true;
+  sigPlaceholder.classList.add('hidden');
+  const pos = getPos(e);
+  lastX = pos.x; lastY = pos.y; lastTime = Date.now();
+});
+sigCanvas.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const pos = getPos(e);
+  const dt = Date.now() - lastTime;
+  const dist = Math.hypot(pos.x - lastX, pos.y - lastY);
+  const velocity = dt > 0 ? dist / dt : 0;
+  sigCtx.lineWidth = 1 + Math.min(velocity * 0.5, 3);
+  sigCtx.beginPath();
+  sigCtx.moveTo(lastX, lastY);
+  sigCtx.lineTo(pos.x, pos.y);
+  sigCtx.stroke();
+  lastX = pos.x; lastY = pos.y; lastTime = Date.now();
+});
+sigCanvas.addEventListener('mouseup', () => { isDrawing = false; });
+sigCanvas.addEventListener('mouseleave', () => { isDrawing = false; });
+
+document.getElementById('sig-clear').addEventListener('click', clearSigPad);
+
+function clearSigPad() {
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigPlaceholder.classList.remove('hidden');
+  currentSignature = '';
+}
+
+// Save signature when requested
+function saveSignature() {
+  const hasSignature = !sigPlaceholder.classList.contains('hidden') ||
+    sigCtx.getImageData(0, 0, sigCanvas.width, sigCanvas.height).data.some(v => v !== 0);
+  if (hasSignature && sigCanvas.width > 0 && sigCanvas.height > 0) {
+    currentSignature = sigCanvas.toDataURL('image/png');
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('app').style.display === 'flex') {
+    const saved = currentSignature;
+    initSigPad();
+    if (saved) {
+      const img = new Image();
+      img.onload = () => sigCtx.drawImage(img, 0, 0);
+      img.src = saved;
+    }
+  }
+});
+
+// ─── Status Selection ────────────────────────────────────────────────────────
+document.getElementById('visit-status-select').addEventListener('click', e => {
+  if (e.target.classList.contains('status-opt')) {
+    document.querySelectorAll('.status-opt').forEach(b => b.classList.remove('selected'));
+    e.target.classList.add('selected');
+  }
+});
+
+// ─── Save Visit ─────────────────────────────────────────────────────────────
+document.getElementById('save-visit-btn').addEventListener('click', () => {
+  if (!currentVisitBizId) {
+    showToast('Please select a business first');
+    return;
+  }
+
+  saveSignature();
+
+  const selectedStatus = document.querySelector('.status-opt.selected');
+  const status = selectedStatus ? selectedStatus.dataset.status : 'visited';
+
+  const visit = {
+    id: 'v_' + Date.now(),
+    bizId: currentVisitBizId,
+    date: new Date().toISOString(),
+    status: status,
+    photos: [...currentPhotos],
+    signature: currentSignature,
+    ownerName: document.getElementById('owner-name-input').value.trim(),
+    notes: document.getElementById('visit-notes').value.trim()
+  };
+
+  // Save to admin data
+  adminData.visits.push(visit);
+  saveAdminData();
+
+  // Update local business list
+  const biz = allBusinesses.find(b => b.id === currentVisitBizId);
+  if (biz) {
+    biz.visits = biz.visits || [];
+    biz.visits.push(visit);
+    biz.latestVisit = visit;
+    biz.displayStatus = status;
+  }
+
+  // Also update the main app's business data in localStorage
+  localStorage.setItem('alamance_businesses', JSON.stringify(allBusinesses));
+
+  // Reset form
+  currentPhotos = [];
+  currentSignature = '';
+  currentVisitBizId = '';
+  document.getElementById('visit-biz-select').value = '';
+  document.getElementById('visit-fields').style.display = 'none';
+  document.getElementById('owner-name-input').value = '';
+  document.getElementById('visit-notes').value = '';
+  clearSigPad();
+  renderPhotoStrip();
+
+  stopCamera();
+  showToast('Visit saved!');
+  renderBizList(activeFilter);
+  renderHistory();
+});
+
+// ─── History Tab ─────────────────────────────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const sorted = [...adminData.visits].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (sorted.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">📋</div>
+        <p>No visits logged yet.<br>Use the <strong>Visit</strong> tab to log your first business visit.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = sorted.map(v => {
+    const biz = allBusinesses.find(b => b.id === v.bizId);
+    const date = new Date(v.date);
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const statusColors = { contacted: '#9ca3af', visited: '#d97706', agreed: '#2563eb', live: '#16a34a' };
+    const statusColor = statusColors[v.status] || '#9ca3af';
+
+    return `
+      <div class="history-entry">
+        <div class="history-header">
+          <span class="history-biz">${biz ? biz.name : v.bizId}</span>
+          <span class="history-date">${dateStr}</span>
+        </div>
+        ${v.ownerName ? `<div class="history-owner">Signed by: ${v.ownerName}</div>` : ''}
+        <div class="history-status" style="background:${statusColor}20;color:${statusColor}">${v.status}</div>
+        ${v.notes ? `<div class="history-notes">"${v.notes}"</div>` : ''}
+        ${v.photos && v.photos.length > 0 ? `
+          <div class="history-photos">
+            ${v.photos.map(p => `<img src="${p}" alt="Visit photo" onclick="openLightbox('${p}')">`).join('')}
+          </div>` : ''}
+        ${v.signature ? `<div style="margin-top:8px"><img src="${v.signature}" alt="Signature" style="height:60px;border:1px solid #e5e7eb;border-radius:8px;"></div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ─── Export JSON ─────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    businesses: allBusinesses.map(b => ({
+      id: b.id, name: b.name, category: b.category, address: b.address, phone: b.phone,
+      website: b.website, deal: b.deal, status: b.displayStatus,
+      visits: b.visits || []
+    })),
+    totalVisits: adminData.visits.length
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'alamance-picks-visits-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Data exported!');
+});
+
+// ─── Lightbox ────────────────────────────────────────────────────────────────
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+document.getElementById('lightbox-close').addEventListener('click', () => {
+  document.getElementById('lightbox').classList.remove('show');
+});
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) {
+    document.getElementById('lightbox').classList.remove('show');
+  }
+});
+
+// ─── Logout ──────────────────────────────────────────────────────────────────
+document.getElementById('logout-btn').addEventListener('click', () => {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  ENTERED_PIN.fill(null);
+  pinStep = 0;
+  renderPinDots();
+  document.getElementById('login-error').textContent = '';
+});
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+initSigPad();
+renderPinDots();
+</script>
+</body>
+</html>
