@@ -326,6 +326,17 @@
       background: var(--orange);
       color: #fff;
     }
+    /* Photo strip on business card */
+    .biz-photo-strip {
+      display: flex; gap: 5px; margin-top: 8px; overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .biz-photo-strip::-webkit-scrollbar { display: none; }
+    .biz-photo-strip img {
+      width: 50px; height: 50px; border-radius: 8px; object-fit: cover;
+      border: 1.5px solid var(--border); flex-shrink: 0; cursor: pointer;
+    }
+
 
     /* ── Empty State ───────────────────────── */
     .empty-state {
@@ -446,7 +457,7 @@
 <div id="app">
 
   <!-- Header -->
-  <header>
+  <header onclick="adminAccess()">
     <div class="app-name">🏛️ Alamance Picks</div>
     <div class="tagline">Sean's Local Business Picks</div>
     <div class="campaign-badge">Ewing 2026</div>
@@ -1045,6 +1056,22 @@ let activeCategory = "all";
 function init() {
   // Save businesses to localStorage so admin panel can access them
   localStorage.setItem('alamance_businesses', JSON.stringify(BUSINESSES));
+  // Merge visit data from admin localStorage into BUSINESSES for display
+  try {
+    const adminData = JSON.parse(localStorage.getItem('alamance_admin_data') || '{"visits":[]}');
+    const visitMap = {};
+    adminData.visits.forEach(v => {
+      if (!visitMap[v.bizId] || new Date(v.date) > new Date(visitMap[v.bizId].date)) {
+        visitMap[v.bizId] = v;
+      }
+    });
+    BUSINESSES.forEach(b => {
+      if (visitMap[b.id]) {
+        b.photos = visitMap[b.id].photos || [];
+        b.signature = visitMap[b.id].signature || '';
+      }
+    });
+  } catch(e) {}
   renderTabs();
   renderList();
   buildMap();
@@ -1130,6 +1157,7 @@ function renderList() {
         <a class="cta-btn cta-dir" href="https://maps.apple.com/?daddr=${encodeURIComponent(biz.address)}" target="_blank">🗺️ Directions</a>
         <a class="cta-btn cta-call" href="tel:${biz.phone.replace(/\D/g,'')}">📞 ${biz.phone}</a>
       </div>
+      ${(biz.photos && biz.photos.length > 0) ? `<div class="biz-photo-strip">${biz.photos.slice(0,4).map(p => `<img src="${p}" alt="Visit photo" onclick="showBizPhoto('${p.replace(/'/g, "\'")}')">`).join('')}</div>` : ''}
     `;
     container.appendChild(card);
   });
@@ -1201,12 +1229,34 @@ function closeBanner() {
   document.getElementById('install-banner').classList.remove('show');
 }
 
+// Secret: triple-tap the header to open admin panel
+let _headerTaps = 0;
+let _headerTapTimer = null;
+function adminAccess() {
+  _headerTaps++;
+  clearTimeout(_headerTapTimer);
+  _headerTapTimer = setTimeout(() => { _headerTaps = 0; }, 500);
+  if (_headerTaps >= 5) {
+    window.location.href = 'admin.html';
+  }
+}
+
 // Register service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(() => {
     console.log('SW registered');
   }).catch(err => console.log('SW registration failed:', err));
 }
+
+function showBizPhoto(src) {
+  const lb = document.getElementById('photo-lightbox');
+  document.getElementById('lightbox-img').src = src;
+  lb.style.display = 'flex';
+}
 </script>
+<!-- Photo lightbox -->
+<div id="photo-lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;align-items:center;justify-content:center;" onclick="document.getElementById('photo-lightbox').style.display='none'">
+  <img id="lightbox-img" src="" style="max-width:90vw;max-height:90vh;border-radius:12px;">
+</div>
 </body>
 </html>
